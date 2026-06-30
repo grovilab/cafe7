@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Drink Selector</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for premium typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS CDN (For Excel Exporting) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8fafc;
+        }
+        /* Custom smooth transition for hover states */
+        .smooth-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* Hide scrollbars but keep functionality */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Navigation Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-amber-500 text-white p-2.5 rounded-xl shadow-md shadow-amber-500/20">
+                    <i class="fa-solid fa-mug-hot text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 tracking-tight">CAFE HARMONY</h1>
+                    <p class="text-xs text-slate-500">Premium Drink Curator</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span class="text-sm bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full font-medium border border-amber-200/50">
+                    <i class="fa-solid fa-store mr-1.5"></i> 매장 주문
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Side: Drink Selection Area (7 Cols) -->
+        <section class="lg:col-span-7 flex flex-col space-y-6">
+            
+            <!-- Visual Select Section Header -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <span class="w-1.5 h-5 bg-amber-500 rounded-full inline-block"></span>
+                            원하는 음료를 선택하세요
+                        </h2>
+                        <p class="text-sm text-slate-500 mt-1">10가지의 시그니처 음료 메뉴가 준비되어 있습니다.</p>
+                    </div>
+                    
+                    <!-- Quick Select Dropdown -->
+                    <div class="relative w-full sm:w-64">
+                        <label for="drink-select" class="sr-only">음료 선택</label>
+                        <select id="drink-select" onchange="handleSelectChange(this.value)" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-xl focus:ring-amber-500 focus:border-amber-500 block p-3 pr-10 appearance-none font-medium cursor-pointer shadow-sm hover:bg-slate-100 smooth-transition">
+                            <!-- Options filled dynamically by JS -->
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-500">
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Selected Drink Spotlight Card -->
+            <div id="selected-drink-card" class="bg-gradient-to-br from-amber-50 to-orange-50/30 rounded-3xl border border-amber-200/80 p-6 sm:p-8 shadow-md relative overflow-hidden smooth-transition">
+                <!-- Background decorative accent -->
+                <div class="absolute -right-8 -bottom-8 text-amber-500/5 text-9xl pointer-events-none select-none">
+                    <i class="fa-solid fa-mug-hot"></i>
+                </div>
+                
+                <div class="relative flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                    <!-- Dynamic Big Icon representing category -->
+                    <div id="spotlight-icon-bg" class="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl flex items-center justify-center text-4xl sm:text-5xl shadow-lg shrink-0">
+                        <i id="spotlight-icon" class="fa-solid"></i>
+                    </div>
+
+                    <!-- Spotlight Text -->
+                    <div class="text-center sm:text-left flex-grow space-y-2">
+                        <span id="spotlight-tag" class="text-xs font-bold uppercase tracking-wider text-amber-600 bg-amber-100 px-2.5 py-1 rounded-full">RECOMMENDED</span>
+                        <h3 id="spotlight-name-ko" class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">음료 이름</h3>
+                        <p id="spotlight-name-en" class="text-sm text-slate-500 font-medium">English Name</p>
+                        <p id="spotlight-description" class="text-slate-600 text-sm leading-relaxed pt-1">음료에 대한 맛깔나는 시그니처 묘사가 노출됩니다.</p>
+                        <div class="flex items-baseline justify-center sm:justify-start gap-1.5 pt-3">
+                            <span class="text-sm font-semibold text-slate-500">가격</span>
+                            <span id="spotlight-price" class="text-2xl font-black text-amber-600">0원</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Drink Modifiers Menu -->
+                <div class="mt-8 pt-6 border-t border-amber-200/60 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <!-- Temperature Customizer -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">온도 (Temp)</label>
+                        <div class="grid grid-cols-2 gap-2 bg-slate-100/80 p-1 rounded-xl" id="temp-group">
+                            <button onclick="setOption('temp', 'ICE')" id="btn-temp-ice" class="py-1.5 text-xs font-bold rounded-lg smooth-transition">ICE</button>
+                            <button onclick="setOption('temp', 'HOT')" id="btn-temp-hot" class="py-1.5 text-xs font-bold rounded-lg smooth-transition">HOT</button>
+                        </div>
+                    </div>
+
+                    <!-- Sweetness Customizer -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">당도 (Sweetness)</label>
+                        <div class="grid grid-cols-3 gap-1 bg-slate-100/80 p-1 rounded-xl">
+                            <button onclick="setOption('sweet', '30%')" id="btn-sweet-30" class="py-1.5 text-xs font-bold rounded-lg smooth-transition">30%</button>
+                            <button onclick="setOption('sweet', '50%')" id="btn-sweet-50" class="py-1.5 text-xs font-bold rounded-lg smooth-transition">50%</button>
+                            <button onclick="setOption('sweet', '100%')" id="btn-sweet-100" class="py-1.5 text-xs font-bold rounded-lg smooth-transition">100%</button>
+                        </div>
+                    </div>
+
+                    <!-- Ice Level Customizer (Disabled on HOT) -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">얼음량 (Ice)</label>
+                        <div class="grid grid-cols-3 gap-1 bg-slate-100/80 p-1 rounded-xl" id="ice-container">
+                            <button onclick="setOption('ice', '적게')" id="btn-ice-less" class="py-1.5 text-xs font-bold rounded-lg smooth-transition">적게</button>
+                            <button onclick="setOption('ice', '보통')" id="btn-ice-normal" class="py-1.5 text-xs font-bold rounded-lg smooth-transition">보통</button>
+                            <button onclick="setOption('ice', '많이')" id="btn-ice-more" class="py-1.5 text-xs font-bold rounded-lg smooth-transition">많이</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add to order action button inside the card -->
+                <div class="mt-6 flex justify-end">
+                    <button onclick="addSelectedToCart()" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 smooth-transition transform hover:-translate-y-0.5">
+                        <i class="fa-solid fa-cart-plus"></i>
+                        <span>옵션대로 장바구니 담기</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 10 Drinks Visual Grid Menu -->
+            <div>
+                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-table-cells-large"></i> 전체 메뉴 격자 선택
+                </h3>
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3" id="menu-grid">
+                    <!-- Dynamically populated via Javascript -->
+                </div>
+            </div>
+
+            <!-- Customer Review Section -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <span class="w-1.5 h-5 bg-amber-500 rounded-full inline-block"></span>
+                    카페 이용 후기 남기기
+                </h3>
+                <p class="text-sm text-slate-500">메뉴와 매장 이용 경험에 대한 소중한 한 줄 평을 남겨주세요.</p>
+                
+                <!-- Review Input Form -->
+                <div class="bg-slate-50 p-4 rounded-xl space-y-3 border border-slate-100">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <span class="text-xs font-bold text-slate-500">평점 선택:</span>
+                        <div class="flex gap-1 text-amber-400" id="star-rating-container">
+                            <button onclick="setReviewRating(1)" class="focus:outline-none hover:scale-110 transition duration-150"><i class="fa-solid fa-star" id="review-star-1"></i></button>
+                            <button onclick="setReviewRating(2)" class="focus:outline-none hover:scale-110 transition duration-150"><i class="fa-solid fa-star" id="review-star-2"></i></button>
+                            <button onclick="setReviewRating(3)" class="focus:outline-none hover:scale-110 transition duration-150"><i class="fa-solid fa-star" id="review-star-3"></i></button>
+                            <button onclick="setReviewRating(4)" class="focus:outline-none hover:scale-110 transition duration-150"><i class="fa-solid fa-star" id="review-star-4"></i></button>
+                            <button onclick="setReviewRating(5)" class="focus:outline-none hover:scale-110 transition duration-150"><i class="fa-solid fa-star" id="review-star-5"></i></button>
+                        </div>
+                        <span id="rating-text" class="text-xs font-bold text-amber-600">5.0점 (최고예요!)</span>
+                    </div>
+                    
+                    <div class="relative">
+                        <textarea id="review-textarea" rows="3" maxlength="150" placeholder="이곳에 따뜻한 후기를 작성해주세요 (최대 150자)..." class="w-full bg-white border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-amber-500 focus:border-amber-500 block p-3.5 pr-10 appearance-none font-medium shadow-sm transition duration-200 placeholder-slate-400 resize-none"></textarea>
+                        <div class="absolute bottom-2 right-3 text-[10px] font-bold text-slate-400" id="char-counter">0 / 150</div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button onclick="submitReview()" class="bg-slate-900 hover:bg-amber-600 text-white font-bold py-2.5 px-5 rounded-lg text-xs shadow-md transition duration-200 flex items-center gap-1.5">
+                            <i class="fa-solid fa-pen"></i> 후기 등록
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pre-existing and New Reviews List -->
+                <div class="space-y-3">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-regular fa-comments"></i> 실시간 방문 후기 목록
+                    </h4>
+                    <div id="reviews-list" class="space-y-2 max-h-48 overflow-y-auto pr-1 no-scrollbar">
+                        <!-- Dynamic review items go here -->
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Side: Order Cart Panel (5 Cols) -->
+        <aside class="lg:col-span-5">
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sticky top-24 flex flex-col h-[calc(100vh-140px)] min-h-[500px]">
+                
+                <!-- Cart Header -->
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-receipt text-slate-400 text-lg"></i>
+                        <h2 class="text-lg font-bold text-slate-900">선택 내역 (장바구니)</h2>
+                    </div>
+                    <span id="cart-count-badge" class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full">
+                        0개 음료
+                    </span>
+                </div>
+
+                <!-- Cart List Container -->
+                <div id="cart-list" class="flex-grow overflow-y-auto py-4 space-y-3 no-scrollbar">
+                    <!-- Dynamic Cart Items loaded here -->
+                    <!-- Empty State Placeholder -->
+                    <div id="cart-empty-state" class="h-full flex flex-col items-center justify-center text-center space-y-3 py-12">
+                        <div class="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-300">
+                            <i class="fa-solid fa-bag-shopping text-2xl"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-slate-600">장바구니가 비어 있습니다</p>
+                            <p class="text-xs text-slate-400 mt-1">상단의 음료 옵션을 고르고 담아보세요.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cart Total Calculation Section -->
+                <div class="pt-4 border-t border-slate-100 space-y-4">
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm text-slate-500">
+                            <span>상품 소계</span>
+                            <span id="subtotal-amount">₩0</span>
+                        </div>
+                        <div class="flex justify-between text-sm text-slate-500">
+                            <span>할인율 (신규회원)</span>
+                            <span class="text-green-600">-₩0</span>
+                        </div>
+                        <div class="flex justify-between items-baseline pt-2 border-t border-dashed border-slate-100">
+                            <span class="text-base font-bold text-slate-800">최종 결제 금액</span>
+                            <span id="total-amount" class="text-2xl font-black text-amber-600">₩0</span>
+                        </div>
+                    </div>
+
+                    <!-- Checkout & Clear & Excel Export buttons -->
+                    <div class="flex flex-col gap-2">
+                        <!-- Top Row: Export Excel & Trash -->
+                        <div class="grid grid-cols-5 gap-2">
+                            <button onclick="clearCart()" class="col-span-1 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-red-600 font-bold p-3 rounded-xl transition duration-200 flex items-center justify-center" title="장바구니 비우기">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                            <button onclick="exportToExcel()" class="col-span-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-200 flex items-center justify-center gap-2" title="엑셀 파일로 주문서 내려받기">
+                                <i class="fa-regular fa-file-excel text-lg"></i>
+                                <span class="text-sm">엑셀 주문서 다운로드</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Bottom Row: Order Transfer -->
+                        <button onclick="handleCheckout()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2">
+                            <span>주문서 전송하기</span>
+                            <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- Custom Checkout Dialog Modal -->
+    <div id="checkout-modal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Modal Background overlay -->
+            <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" aria-hidden="true" onclick="closeModal()"></div>
+
+            <!-- This element is to trick the browser into centering the modal contents. -->
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <!-- Modal Panel content -->
+            <div class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-100">
+                <div class="bg-amber-500 p-6 text-white text-center relative">
+                    <button onclick="closeModal()" class="absolute right-4 top-4 text-white/80 hover:text-white text-lg transition">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <div class="w-16 h-16 bg-white/15 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fa-solid fa-circle-check text-2xl text-white"></i>
+                    </div>
+                    <h3 class="text-xl font-bold">주문이 정상 접수되었습니다!</h3>
+                    <p class="text-xs text-amber-100 mt-1">카운터에서 준비가 완료되면 호출해 드리겠습니다.</p>
+                </div>
+
+                <!-- Receipt details wrapper -->
+                <div class="p-6 space-y-4">
+                    <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                        <div class="flex justify-between items-center text-xs text-slate-400 font-bold uppercase tracking-wider border-b border-slate-200/50 pb-2">
+                            <span>주문 번호 : #0429</span>
+                            <span id="receipt-date">2026-06-30</span>
+                        </div>
+                        
+                        <!-- Mini Receipt Item list -->
+                        <div id="receipt-items" class="divide-y divide-slate-100 max-h-48 overflow-y-auto mt-2 pr-1">
+                            <!-- Populated dynamically -->
+                        </div>
+
+                        <div class="flex justify-between items-baseline pt-3 border-t border-slate-200 mt-3 font-bold text-slate-800">
+                            <span>결제 총액</span>
+                            <span id="receipt-total" class="text-lg text-amber-600 font-black">₩0</span>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button onclick="closeModal()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-6 rounded-xl transition duration-150">
+                            확인 완료
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APP LOGIC -->
+    <script>
+        // Data containing exact 10 curated cafe drinks
+        const drinksData = [
+            {
+                id: "espresso_americano",
+                nameKo: "아메리카노",
+                nameEn: "Americano",
+                price: 4100,
+                desc: "콜롬비아와 에티오피아 유기농 원두의 완벽한 조화로 깊고 그윽한 풍미의 아이코닉 에스프레소 음료입니다.",
+                category: "coffee",
+                icon: "fa-mug-hot",
+                tag: "BEST",
+                iconBg: "bg-amber-100 text-amber-800",
+                allowHot: true
+            },
+            {
+                id: "espresso_latte",
+                nameKo: "카페라떼",
+                nameEn: "Cafe Latte",
+                price: 4600,
+                desc: "진한 더블 에스프레소 샷에 신선하고 고소한 국산 1등급 우유가 어우러져 한없이 정갈하고 부드러운 하모니를 자랑합니다.",
+                category: "coffee",
+                icon: "fa-mug-saucer",
+                tag: "CLASSIC",
+                iconBg: "bg-amber-200 text-amber-900",
+                allowHot: true
+            },
+            {
+                id: "matcha_latte",
+                nameKo: "제주 말차 라떼",
+                nameEn: "Jeju Matcha Latte",
+                price: 5100,
+                desc: "제주도 다원에서 수확한 100% 유기농 차광재배 말차 가루를 아낌없이 가공해 쌉싸름하면서도 기분 좋은 단맛을 연출합니다.",
+                category: "tea_latte",
+                icon: "fa-leaf",
+                tag: "ORGANIC",
+                iconBg: "bg-emerald-100 text-emerald-800",
+                allowHot: true
+            },
+            {
+                id: "chocolate_latte",
+                nameKo: "리얼 벨지안 초코 라떼",
+                nameEn: "Real Belgian Chocolate Latte",
+                price: 4900,
+                desc: "정통 벨기에 카카오 빈을 녹여내려 극강의 꾸덕함และ 리치한 카카오 본연의 초콜릿 풍미를 완성도 높은 온도로 담아냈습니다.",
+                category: "latte",
+                icon: "fa-cookie",
+                tag: "SWEET",
+                iconBg: "bg-yellow-900/10 text-yellow-900",
+                allowHot: true
+            },
+            {
+                id: "grapefruit_ade",
+                nameKo: "수제 자몽 에이드",
+                nameEn: "Grapefruit Ade",
+                price: 5500,
+                desc: "직접 알알이 가공하여 담근 풍성한 생자몽 청에 탄산수 브랜드 초정 탄산수를 넣어 깔끔하고 톡 쏘는 상큼함을 즐겨보세요.",
+                category: "ade",
+                icon: "fa-wine-glass-empty",
+                tag: "FRESH",
+                iconBg: "bg-orange-100 text-orange-800",
+                allowHot: false
+            },
+            {
+                id: "lemonade",
+                nameKo: "블루 레몬에이드",
+                nameEn: "Blue Lemonade",
+                price: 5300,
+                desc: "이탈리아 시칠리아 레몬 유기농 주스와 푸른 바다 빛깔 시럽을 매칭해 극상의 청량감을 선사하는 올타임 서머 바이브 음료.",
+                category: "ade",
+                icon: "fa-glass-water",
+                tag: "VIBRANT",
+                iconBg: "bg-sky-100 text-sky-800",
+                allowHot: false
+            },
+            {
+                id: "peach_iced_tea",
+                nameKo: "복숭아 아이스티",
+                nameEn: "Peach Iced Tea",
+                price: 3800,
+                desc: "은은한 실론 홍차 잎의 무게 있는 에센스에 달콤하게 잘 익은 천도복숭아 과즙을 듬뿍 끼얹은 정석적인 시원 달달함.",
+                category: "tea",
+                icon: "fa-whiskey-glass",
+                tag: "POPULAR",
+                iconBg: "bg-rose-100 text-rose-800",
+                allowHot: false
+            },
+            {
+                id: "strawberry_smoothie",
+                nameKo: "딸기 요거트 스무디",
+                nameEn: "Strawberry Yogurt Smoothie",
+                price: 5800,
+                desc: "가야 청정 농가 딸기를 전량 동결 건조 및 가공하여 부드럽고 새콤한 그리스식 플레인 요거트 아이스크림과 블렌딩했습니다.",
+                category: "smoothie",
+                icon: "fa-ice-cream",
+                tag: "PREMIUM",
+                iconBg: "bg-pink-100 text-pink-800",
+                allowHot: false
+            },
+            {
+                id: "chamomile_tea",
+                nameKo: "허니 캐모마일 티",
+                nameEn: "Honey Chamomile Tea",
+                price: 4300,
+                desc: "심신 안정에 특출난 캐모마일 천연 유기농 꽃잎 티백에 천연 벌꿀 한 방울을 가미해 한 모금 속 온전한 휴식을 안겨줍니다.",
+                category: "tea",
+                icon: "fa-seedling",
+                tag: "RELAX",
+                iconBg: "bg-teal-100 text-teal-800",
+                allowHot: true
+            },
+            {
+                id: "tapioca_bubble",
+                nameKo: "오리지널 타피오카 버블티",
+                nameEn: "Tapioca Bubble Tea",
+                price: 5500,
+                desc: "타이완 현지에서 직소싱한 부드럽고 쫄깃한 버블 타피오카에 대만 클래식 밀크티 베이스가 어우러진 시그니처 음료.",
+                category: "tea_latte",
+                icon: "fa-circle-dot",
+                tag: "DELICIOUS",
+                iconBg: "bg-indigo-100 text-indigo-800",
+                allowHot: true
+            }
+        ];
+
+        // Global State variables
+        let selectedDrink = drinksData[0]; // Active Spotlight Drink object
+        let currentOptions = {
+            temp: "ICE",
+            sweet: "50%",
+            ice: "보통"
+        };
+        let cart = []; // Order bucket
+
+        let currentReviewRating = 5;
+        let reviews = [
+            { id: 1, user: "카페 러버", rating: 5, text: "아메리카노 산미가 적어서 매일 아침 테이크아웃해요!", date: "2026-06-30" },
+            { id: 2, user: "단거좋아", rating: 4, text: "초코 라떼에 버블 추가해서 먹으면 당 충전 제대로입니다 최고!", date: "2026-06-29" }
+        ];
+
+        // App Start hook
+        window.addEventListener('DOMContentLoaded', () => {
+            initSelectDropdown();
+            renderMenuGrid();
+            updateSpotlight(selectedDrink.id);
+            updateCartUI();
+            initReviewCounter();
+            renderReviews();
+        });
+
+        // Fill Native Dropdown Select Elements
+        function initSelectDropdown() {
+            const selectEl = document.getElementById('drink-select');
+            selectEl.innerHTML = drinksData.map(drink => {
+                return `<option value="${drink.id}">${drink.nameKo} (${drink.nameEn}) - ₩${drink.price.toLocaleString()}</option>`;
+            }).join('');
+        }
+
+        // Render Visual 10-Grid system below spotlight card
+        function renderMenuGrid() {
+            const gridEl = document.getElementById('menu-grid');
+            gridEl.innerHTML = drinksData.map(drink => {
+                const isActive = drink.id === selectedDrink.id;
+                const borderClass = isActive ? 'border-amber-500 ring-2 ring-amber-500/20 bg-white' : 'border-slate-200 hover:border-slate-300 bg-white';
+                return `
+                    <button onclick="updateSpotlight('${drink.id}')" class="flex flex-col items-center justify-center p-4 rounded-2xl border ${borderClass} shadow-xs smooth-transition text-center group">
+                        <div class="w-12 h-12 rounded-xl ${drink.iconBg} flex items-center justify-center text-lg mb-3 group-hover:scale-110 smooth-transition">
+                            <i class="fa-solid ${drink.icon}"></i>
+                        </div>
+                        <span class="text-xs font-bold text-slate-800 line-clamp-1">${drink.nameKo}</span>
+                        <span class="text-[10px] text-slate-400 mt-0.5 font-semibold">₩${drink.price.toLocaleString()}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        // Main Coordinator for changing the chosen drink
+        function updateSpotlight(drinkId) {
+            const drink = drinksData.find(d => d.id === drinkId);
+            if (!drink) return;
+
+            selectedDrink = drink;
+
+            // Update dropdown sync without loops
+            document.getElementById('drink-select').value = drinkId;
+
+            // Handle Cold/Hot layout switches
+            if (!drink.allowHot) {
+                currentOptions.temp = "ICE";
+                // Disable HOT button visually
+                document.getElementById('btn-temp-hot').disabled = true;
+                document.getElementById('btn-temp-hot').className = "opacity-40 cursor-not-allowed py-1.5 text-xs font-bold rounded-lg text-slate-300 bg-slate-100 text-center";
+            } else {
+                document.getElementById('btn-temp-hot').disabled = false;
+            }
+
+            // Sync option DOM updates
+            syncModifierDOM();
+
+            // Populate text elements in dynamic Card Spotlight
+            document.getElementById('spotlight-tag').innerText = drink.tag;
+            document.getElementById('spotlight-name-ko').innerText = drink.nameKo;
+            document.getElementById('spotlight-name-en').innerText = drink.nameEn;
+            document.getElementById('spotlight-description').innerText = drink.desc;
+            document.getElementById('spotlight-price').innerText = `₩${drink.price.toLocaleString()}`;
+            
+            // Icon adjustments
+            const iconBgEl = document.getElementById('spotlight-icon-bg');
+            const iconEl = document.getElementById('spotlight-icon');
+            
+            // Flush all previous classes
+            iconBgEl.className = `w-24 h-24 sm:w-32 sm:h-32 rounded-3xl flex items-center justify-center text-4xl sm:text-5xl shadow-md shrink-0 smooth-transition ${drink.iconBg}`;
+            iconEl.className = `fa-solid ${drink.icon}`;
+
+            // Re-render visual list highlight state
+            renderMenuGrid();
+        }
+
+        // Dropdown native select change handler
+        function handleSelectChange(val) {
+            updateSpotlight(val);
+        }
+
+        // Manage selected properties and visually sync with Tailwind attributes
+        function setOption(category, value) {
+            // Hot setting locks Ice options
+            if (category === 'temp' && value === 'HOT') {
+                currentOptions.ice = "없음";
+            } else if (category === 'temp' && value === 'ICE' && currentOptions.ice === '없음') {
+                currentOptions.ice = "보통";
+            }
+
+            currentOptions[category] = value;
+            syncModifierDOM();
+        }
+
+        // Synchronize dynamic active buttons to active selected parameters
+        function syncModifierDOM() {
+            const { temp, sweet, ice } = currentOptions;
+
+            // Temp indicators
+            const activeIceClass = "bg-sky-500 text-white shadow-xs shadow-sky-500/20";
+            const activeHotClass = "bg-rose-500 text-white shadow-xs shadow-rose-500/20";
+            const neutralClass = "text-slate-600 hover:bg-slate-200/60";
+
+            document.getElementById('btn-temp-ice').className = temp === 'ICE' ? `py-1.5 text-xs font-bold rounded-lg smooth-transition ${activeIceClass}` : `py-1.5 text-xs font-bold rounded-lg smooth-transition ${neutralClass}`;
+            
+            if (selectedDrink.allowHot) {
+                document.getElementById('btn-temp-hot').className = temp === 'HOT' ? `py-1.5 text-xs font-bold rounded-lg smooth-transition ${activeHotClass}` : `py-1.5 text-xs font-bold rounded-lg smooth-transition ${neutralClass}`;
+            }
+
+            // Sweetness indicator UI
+            const activeSweetClass = "bg-amber-500 text-white shadow-xs shadow-amber-500/10";
+            document.getElementById('btn-sweet-30').className = sweet === '30%' ? `py-1.5 text-xs font-bold rounded-lg smooth-transition ${activeSweetClass}` : `py-1.5 text-xs font-bold rounded-lg smooth-transition ${neutralClass}`;
+            document.getElementById('btn-sweet-50').className = sweet === '50%' ? `py-1.5 text-xs font-bold rounded-lg smooth-transition ${activeSweetClass}` : `py-1.5 text-xs font-bold rounded-lg smooth-transition ${neutralClass}`;
+            document.getElementById('btn-sweet-100').className = sweet === '100%' ? `py-1.5 text-xs font-bold rounded-lg smooth-transition ${activeSweetClass}` : `py-1.5 text-xs font-bold rounded-lg smooth-transition ${neutralClass}`;
+
+            // Ice container layout lock on HOT
+            const iceContainer = document.getElementById('ice-container');
+            if (temp === 'HOT') {
+                iceContainer.style.opacity = '0.4';
+                iceContainer.style.pointerEvents = 'none';
+                
+                // Set plain disabled styling
+                const allIceBtns = iceContainer.querySelectorAll('button');
+                allIceBtns.forEach(btn => {
+                    btn.className = "py-1.5 text-xs font-bold rounded-lg text-slate-300 bg-slate-100 text-center cursor-not-allowed";
+                });
+            } else {
+                iceContainer.style.opacity = '1';
+                iceContainer.style.pointerEvents = 'auto';
+                
+                const activeIceLevelClass = "bg-slate-800 text-white shadow-xs shadow-slate-900/10";
+                document.getElementById('btn-ice-less').className = ice === '적게' ? `py-1.5 text-xs font-bold rounded-lg smooth-transition ${activeIceLevelClass}` : `py-1.5 text-xs font-bold rounded-lg smooth-transition ${neutralClass}`;
+                document.getElementById('btn-ice-normal').className = ice === '보통' ? `py-1.5 text-xs font-bold rounded-lg smooth-transition ${activeIceLevelClass}` : `py-1.5 text-xs font-bold rounded-lg smooth-transition ${neutralClass}`;
+                document.getElementById('btn-ice-more').className = ice === '많이' ? `py-1.5 text-xs font-bold rounded-lg smooth-transition ${activeIceLevelClass}` : `py-1.5 text-xs font-bold rounded-lg smooth-transition ${neutralClass}`;
+            }
+        }
+
+        // Construct new item instance and append to cart state
+        function addSelectedToCart() {
+            // Copy state options to unique item reference
+            const cartItem = {
+                uid: 'cart_item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                id: selectedDrink.id,
+                nameKo: selectedDrink.nameKo,
+                nameEn: selectedDrink.nameEn,
+                price: selectedDrink.price,
+                icon: selectedDrink.icon,
+                iconBg: selectedDrink.iconBg,
+                options: {
+                    temp: currentOptions.temp,
+                    sweet: currentOptions.sweet,
+                    ice: currentOptions.temp === 'HOT' ? '없음' : currentOptions.ice
+                }
+            };
+
+            cart.push(cartItem);
+            updateCartUI();
+        }
+
+        // Splice element from array using internal key
+        function removeCartItem(uid) {
+            cart = cart.filter(item => item.uid !== uid);
+            updateCartUI();
+        }
+
+        // Flush all items in current order scope
+        function clearCart() {
+            cart = [];
+            updateCartUI();
+        }
+
+        // Handle visual elements in Sidebar
+        function updateCartUI() {
+            const listEl = document.getElementById('cart-list');
+            const emptyEl = document.getElementById('cart-empty-state');
+            const countBadgeEl = document.getElementById('cart-count-badge');
+            
+            countBadgeEl.innerText = `${cart.length}개 음료`;
+
+            if (cart.length === 0) {
+                listEl.innerHTML = '';
+                listEl.appendChild(emptyEl);
+                emptyEl.classList.remove('hidden');
+                
+                // Reset calculations
+                document.getElementById('subtotal-amount').innerText = '₩0';
+                document.getElementById('total-amount').innerText = '₩0';
+                return;
+            }
+
+            // Hide placeholder empty container
+            emptyEl.classList.add('hidden');
+
+            listEl.innerHTML = cart.map(item => {
+                const badgeColorClass = item.options.temp === 'ICE' ? 'bg-sky-50 text-sky-600 border-sky-100' : 'bg-rose-50 text-rose-600 border-rose-100';
+                return `
+                    <div class="flex items-center gap-3 bg-slate-50 border border-slate-100 hover:border-slate-200 rounded-2xl p-3 smooth-transition">
+                        <!-- Tiny icon representation -->
+                        <div class="w-10 h-10 rounded-xl ${item.iconBg} flex items-center justify-center text-sm shrink-0">
+                            <i class="fa-solid ${item.icon}"></i>
+                        </div>
+                        
+                        <!-- Texts -->
+                        <div class="flex-grow min-w-0">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs px-1.5 py-0.5 font-black uppercase tracking-wider rounded border ${badgeColorClass}">
+                                    ${item.options.temp}
+                                </span>
+                                <h4 class="text-xs sm:text-sm font-bold text-slate-900 truncate">${item.nameKo}</h4>
+                            </div>
+                            <!-- Option text summary indicators -->
+                            <p class="text-[10px] text-slate-400 mt-1 font-semibold">
+                                당도: ${item.options.sweet} / 얼음: ${item.options.ice}
+                            </p>
+                        </div>
+
+                        <!-- Price & Action -->
+                        <div class="flex flex-col items-end shrink-0 pl-1">
+                            <span class="text-xs sm:text-sm font-black text-slate-800">₩${item.price.toLocaleString()}</span>
+                            <button onclick="removeCartItem('${item.uid}')" class="text-slate-400 hover:text-red-500 text-xs mt-1 transition duration-100" title="아이템 삭제">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Totals processing
+            let subtotal = cart.reduce((sum, current) => sum + current.price, 0);
+            document.getElementById('subtotal-amount').innerText = `₩${subtotal.toLocaleString()}`;
+            document.getElementById('total-amount').innerText = `₩${subtotal.toLocaleString()}`;
+        }
+
+        // Validation check and displaying mock Modal Receipt
+        function handleCheckout() {
+            if (cart.length === 0) {
+                showCartValidationError();
+                return;
+            }
+
+            // Fill Receipt Details Modal
+            const receiptItemsEl = document.getElementById('receipt-items');
+            receiptItemsEl.innerHTML = cart.map(item => `
+                <div class="flex justify-between py-2.5 text-sm">
+                    <div>
+                        <span class="font-bold text-slate-800">${item.nameKo}</span>
+                        <div class="text-[10px] text-slate-400 font-semibold">(${item.options.temp} / 당도: ${item.options.sweet} / 얼음: ${item.options.ice})</div>
+                    </div>
+                    <span class="font-black text-slate-700">₩${item.price.toLocaleString()}</span>
+                </div>
+            `).join('');
+
+            // Date processing
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('receipt-date').innerText = `${year}-${month}-${day} ${hours}:${minutes}`;
+
+            const subtotal = cart.reduce((sum, current) => sum + current.price, 0);
+            document.getElementById('receipt-total').innerText = `₩${subtotal.toLocaleString()}`;
+
+            // Show custom receipt modal safely
+            document.getElementById('checkout-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('checkout-modal').classList.add('hidden');
+            // Clear items on success checkout order
+            clearCart();
+        }
+
+        // Trigger validation message on empty cart
+        function showCartValidationError() {
+            const originalText = document.querySelector('#cart-empty-state p').innerText;
+            document.querySelector('#cart-empty-state p').innerText = "❌ 최소 한 개 이상의 음료를 담아주세요!";
+            document.querySelector('#cart-empty-state p').classList.add('text-rose-500', 'font-black');
+            
+            setTimeout(() => {
+                document.querySelector('#cart-empty-state p').innerText = originalText;
+                document.querySelector('#cart-empty-state p').classList.remove('text-rose-500', 'font-black');
+            }, 2000);
+        }
+
+        // EXCEL EXPORT FUNCTION USING SHEETJS
+        function exportToExcel() {
+            if (cart.length === 0) {
+                showCartValidationError();
+                return;
+            }
+
+            // 1. Prepare structured sheet data
+            const headers = ["번호", "음료명", "영문명", "온도 (Temp)", "당도 (Sweetness)", "얼음량 (Ice)", "단가 (Price)"];
+            const rows = cart.map((item, index) => [
+                index + 1,
+                item.nameKo,
+                item.nameEn,
+                item.options.temp,
+                item.options.sweet,
+                item.options.ice,
+                item.price
+            ]);
+
+            // Add sum row at the bottom
+            const totalPrice = cart.reduce((sum, current) => sum + current.price, 0);
+            rows.push([]); // Empty spacing row
+            rows.push(["합계", "", "", "", "", `${cart.length}개 음료`, totalPrice]);
+
+            // 2. Create SheetJS Workbook and Worksheet
+            const wb = XLSX.utils.book_new();
+            
+            // Generate sheet using our headers and row array
+            const sheetData = [headers, ...rows];
+            const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+            // 3. Define basic column widths for readability
+            const colWidths = [
+                { wch: 6 },  // 번호
+                { wch: 22 }, // 음료명
+                { wch: 25 }, // 영문명
+                { wch: 12 }, // 온도
+                { wch: 15 }, // 당도
+                { wch: 12 }, // 얼음량
+                { wch: 15 }  // 단가
+            ];
+            ws['!cols'] = colWidths;
+
+            // 4. Attach Worksheet to Workbook
+            XLSX.utils.book_append_sheet(wb, ws, "주문상세내역");
+
+            // 5. Build dynamic filename based on current date & time
+            const now = new Date();
+            const dateStr = now.getFullYear() + 
+                            String(now.getMonth() + 1).padStart(2, '0') + 
+                            String(now.getDate()).padStart(2, '0');
+            const timeStr = String(now.getHours()).padStart(2, '0') + 
+                            String(now.getMinutes()).padStart(2, '0') + 
+                            String(now.getSeconds()).padStart(2, '0');
+            const filename = `주문내역_${dateStr}_${timeStr}.xlsx`;
+
+            // 6. Trigger download flow directly to client browser
+            XLSX.writeFile(wb, filename);
+        }
+
+        // Customer review system logic
+        function setReviewRating(rating) {
+            currentReviewRating = rating;
+            const ratingTexts = {
+                1: "1.0점 (많이 아쉬워요)",
+                2: "2.0점 (조금 아쉬워요)",
+                3: "3.0점 (보통이에요)",
+                4: "4.0점 (만족해요!)",
+                5: "5.0점 (최고예요!)"
+            };
+            document.getElementById('rating-text').innerText = ratingTexts[rating];
+            
+            for (let i = 1; i <= 5; i++) {
+                const starIcon = document.getElementById(`review-star-${i}`);
+                if (i <= rating) {
+                    starIcon.className = "fa-solid fa-star text-amber-400";
+                } else {
+                    starIcon.className = "fa-regular fa-star text-slate-300";
+                }
+            }
+        }
+
+        function initReviewCounter() {
+            const textarea = document.getElementById('review-textarea');
+            const counter = document.getElementById('char-counter');
+            textarea.addEventListener('input', () => {
+                counter.innerText = `${textarea.value.length} / 150`;
+            });
+        }
+
+        function renderReviews() {
+            const reviewsList = document.getElementById('reviews-list');
+            reviewsList.innerHTML = reviews.map(rev => {
+                const stars = Array(5).fill(0).map((_, i) => 
+                    `<i class="${i < rev.rating ? 'fa-solid' : 'fa-regular'} fa-star text-amber-400 text-[10px]"></i>`
+                ).join('');
+                return `
+                    <div class="bg-slate-50 border border-slate-100 rounded-xl p-3 space-y-1">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs font-bold text-slate-700">${rev.user}</span>
+                                <div class="flex gap-0.5">${stars}</div>
+                            </div>
+                            <span class="text-[10px] text-slate-400">${rev.date}</span>
+                        </div>
+                        <p class="text-xs text-slate-600 leading-relaxed">${rev.text}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function submitReview() {
+            const textarea = document.getElementById('review-textarea');
+            const text = textarea.value.trim();
+            if (!text) {
+                // Instantly visual feedback instead of standard alert
+                textarea.classList.add('border-rose-500', 'ring-2', 'ring-rose-100');
+                textarea.placeholder = "내용을 입력해 주셔야 후기가 등록됩니다!";
+                setTimeout(() => {
+                    textarea.classList.remove('border-rose-500', 'ring-2', 'ring-rose-100');
+                    textarea.placeholder = "이곳에 따뜻한 후기를 작성해주세요 (최대 150자)...";
+                }, 2000);
+                return;
+            }
+
+            const now = new Date();
+            const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+            const newReview = {
+                id: Date.now(),
+                user: "카페 메이트 " + Math.floor(1000 + Math.random() * 9000),
+                rating: currentReviewRating,
+                text: text,
+                date: formattedDate
+            };
+
+            reviews.unshift(newReview);
+            renderReviews();
+            
+            textarea.value = "";
+            document.getElementById('char-counter').innerText = "0 / 150";
+            setReviewRating(5);
+        }
+    </script>
+</body>
+</html>
