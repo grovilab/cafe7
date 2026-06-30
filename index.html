@@ -223,19 +223,25 @@
                     </span>
                 </div>
 
-                <!-- Cart List Container -->
-                <div id="cart-list" class="flex-grow overflow-y-auto py-4 space-y-3 no-scrollbar">
-                    <!-- Dynamic Cart Items loaded here -->
-                    <!-- Empty State Placeholder -->
-                    <div id="cart-empty-state" class="h-full flex flex-col items-center justify-center text-center space-y-3 py-12">
+                <!-- Cart Content Area (BUG FIXED: Separated List and Empty State to prevent DOM Node Destruction) -->
+                <div class="flex-grow overflow-y-auto py-4 no-scrollbar flex flex-col">
+                    
+                    <!-- Cart List Container -->
+                    <div id="cart-list" class="space-y-3 hidden">
+                        <!-- Dynamic Cart Items loaded here -->
+                    </div>
+
+                    <!-- Empty State Placeholder (Kept distinct and safe from innerHTML overwrite) -->
+                    <div id="cart-empty-state" class="h-full flex-grow flex flex-col items-center justify-center text-center space-y-3 py-12">
                         <div class="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-300">
                             <i class="fa-solid fa-bag-shopping text-2xl"></i>
                         </div>
                         <div>
-                            <p class="font-medium text-slate-600">장바구니가 비어 있습니다</p>
+                            <p id="empty-state-text" class="font-medium text-slate-600">장바구니가 비어 있습니다</p>
                             <p class="text-xs text-slate-400 mt-1">상단의 음료 옵션을 고르고 담아보세요.</p>
                         </div>
                     </div>
+
                 </div>
 
                 <!-- Cart Total Calculation Section -->
@@ -646,7 +652,7 @@
             updateCartUI();
         }
 
-        // Handle visual elements in Sidebar
+        // Handle visual elements in Sidebar (BUG FIXED: Prevents emptyEl DOM destruction)
         function updateCartUI() {
             const listEl = document.getElementById('cart-list');
             const emptyEl = document.getElementById('cart-empty-state');
@@ -656,7 +662,7 @@
 
             if (cart.length === 0) {
                 listEl.innerHTML = '';
-                listEl.appendChild(emptyEl);
+                listEl.classList.add('hidden');
                 emptyEl.classList.remove('hidden');
                 
                 // Reset calculations
@@ -665,13 +671,14 @@
                 return;
             }
 
-            // Hide placeholder empty container
+            // Hide empty placeholder safely without destroying its element reference
             emptyEl.classList.add('hidden');
+            listEl.classList.remove('hidden');
 
             listEl.innerHTML = cart.map(item => {
                 const badgeColorClass = item.options.temp === 'ICE' ? 'bg-sky-50 text-sky-600 border-sky-100' : 'bg-rose-50 text-rose-600 border-rose-100';
                 return `
-                    <div class="flex items-center gap-3 bg-slate-50 border border-slate-100 hover:border-slate-200 rounded-2xl p-3 smooth-transition">
+                    <div class="flex items-center gap-3 bg-slate-50 border border-slate-100 hover:border-slate-200 rounded-2xl p-3 smooth-transition animate-fade-in">
                         <!-- Tiny icon representation -->
                         <div class="w-10 h-10 rounded-xl ${item.iconBg} flex items-center justify-center text-sm shrink-0">
                             <i class="fa-solid ${item.icon}"></i>
@@ -751,13 +758,14 @@
 
         // Trigger validation message on empty cart
         function showCartValidationError() {
-            const originalText = document.querySelector('#cart-empty-state p').innerText;
-            document.querySelector('#cart-empty-state p').innerText = "❌ 최소 한 개 이상의 음료를 담아주세요!";
-            document.querySelector('#cart-empty-state p').classList.add('text-rose-500', 'font-black');
+            const textEl = document.getElementById('empty-state-text');
+            const originalText = textEl.innerText;
+            textEl.innerText = "❌ 최소 한 개 이상의 음료를 담아주세요!";
+            textEl.classList.add('text-rose-500', 'font-black');
             
             setTimeout(() => {
-                document.querySelector('#cart-empty-state p').innerText = originalText;
-                document.querySelector('#cart-empty-state p').classList.remove('text-rose-500', 'font-black');
+                textEl.innerText = originalText;
+                textEl.classList.remove('text-rose-500', 'font-black');
             }, 2000);
         }
 
